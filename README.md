@@ -1,5 +1,5 @@
 # VGTabMerge
-Small py script to merge `aty_properties` from a VGTab injector kext to the `config.plist -> Devices -> Properties` for WEG injection.
+Small py script to merge `aty_properties` from a VGTab injector kext to the `config.plist -> Devices -> Properties` for WEG injection per [this guide](https://www.tonymacx86.com/threads/guide-injection-of-amd-vega-power-and-fan-control-properties.267519/).
 
 ***
 
