@@ -12,3 +12,12 @@ Do the following one line at a time in Terminal:
     chmod +x VGTabMerge.command
     
 Then run with either `./VGTabMerge.command` or by double-clicking *VGTabMerge.command*
+
+***
+
+## Usage:
+
+**NOTE:** This script expects that you have already run VGTab-en.app and created your VGTab_xxxx.kext.  If you have not done this yet, see [this guide](https://www.tonymacx86.com/threads/guide-injection-of-amd-vega-power-and-fan-control-properties.267519/) first.
+
+Once you have the script downloaded and open, you'll be presented with the following window:
+
