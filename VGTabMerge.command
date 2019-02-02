@@ -6,89 +6,11 @@ class VGTM:
     def __init__(self):
         self.u = utils.Utils("VGTab Merge")
         self.r = run.Run()
+        self.i = ioreg.IOReg()
         self.config  = None
         self.kext    = None
         self.ioreg   = None
         self.devpath = "PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)"
-
-    def get_devs(self,dev_list = None, force = False):
-        # Iterate looking for our device(s)
-        # returns a list of devices@addr
-        if dev_list == None:
-            return []
-        if not isinstance(dev_list, list):
-            dev_list = [dev_list]
-        if force or not self.ioreg:
-            self.ioreg = self.r.run({"args":["ioreg", "-l", "-p", "IOService", "-w0"]})[0].split("\n")
-        igpu = []
-        for line in self.ioreg:
-            if any(x for x in dev_list if x in line) and "+-o" in line:
-                igpu.append(line)
-        return igpu
-
-    def get_info(self, igpu):
-        # Returns a dict of the properties of the IGPU device
-        # as individual text items
-        # First split up the text and find the device
-        try:
-            hid = igpu.split("+-o ")[1].split("  ")[0]
-        except:
-            return {}
-        # Got our address - get the full info
-        hd = self.r.run({"args":["ioreg", "-p", "IODeviceTree", "-n", hid, "-w0"]})[0]
-        if not len(hd):
-            return {"name":hid}
-        primed = False
-        idevice = {"name":"Unknown", "parts":{}}
-        for line in hd.split("\n"):
-            if not primed and not hid in line:
-                continue
-            if not primed:
-                # Has our passed device
-                try:
-                    idevice["name"] = hid
-                except:
-                    idevice["name"] = "Unknown"
-                primed = True
-                continue
-            # Primed, but not IGPU
-            if "+-o" in line:
-                # Past our prime
-                primed = False
-                continue
-            # Primed, not IGPU, not next device - must be info
-            try:
-                name = line.split(" = ")[0].split('"')[1]
-                idevice["parts"][name] = line.split(" = ")[1]
-            except Exception as e:
-                pass
-        return idevice
-
-    def get_path(self, acpi_path):
-        # Iterates the acpi pathing and returns
-        # the device path
-        path = acpi_path.split("/")
-        if not len(path):
-            return None
-        ff = int("0xFF",16)
-        paths = []
-        for p in path:
-            if not "@" in p:
-                continue
-            try:
-                node = int(p.split("@")[1],16)
-                func = node & ff
-                dev  = (node >> 16) & ff
-            except:
-                # Failed - bail
-                return None
-            if len(paths):
-                paths.append("Pci({},{})".format(hex(dev),hex(func)))
-            else:
-                paths.append("PciRoot({})".format(hex(dev)))
-        if len(paths):
-            return "/".join(paths)
-        return None
     
     def select_file(self, name = "config.plist"):
         self.u.head("Selecting {}".format(name))
@@ -191,15 +113,11 @@ class VGTM:
         # If on macOS, try to isolate our devpath
         if sys.platform == "darwin":
             print("Checking IOReg for GFX0...")
-            gpu_list = self.get_devs(" GFX0@")
+            gpu_list = self.i.get_devices(" GFX0@")
             if len(gpu_list):
                 print(" - Located - getting path...")
                 gpu = gpu_list[0]
-                g_dict = self.get_info(gpu)
-                try:
-                    loc = self.get_path(g_dict['parts']['acpi-path'].replace('"',""))
-                except:
-                    loc = None
+                loc = self.i.get_device_path(gpu)
                 if not loc:
                     print(" --> Failed to locate - falling back on default path")
                 else:
